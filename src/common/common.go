@@ -1,17 +1,22 @@
 package common
 
 import (
-	"bloomf/bloom"
+	"os"
 	"log"
+	"bufio"
+	"strings"
+	"strconv"
+	"path/filepath"
+	"encoding/csv"
 )
 
 /* Verify if the word found in a file by Dory indeed exists. */
 func verifyWordInFile(fileNum uint, keyword string) bool {
-	// Open the file
     fileNumber := strconv.FormatUint(uint64(fileNum), 10)
 	file, err := os.Open(filepath.Join("sample_docs", fileNumber))
 	if err != nil {
         log.Fatal(err)
+		panic(err)
     }
 	defer file.Close()
 
@@ -37,19 +42,19 @@ func verifyWordInFile(fileNum uint, keyword string) bool {
     return false
 }
 
-func checkFileExists(filePath string) {
-	if _, err := os.Stat(filePath); err == nil {
-        log.Printf("File '%s' exists\n", filePath)
-		return true
+/* Check if given file with FilePath exists */
+func checkFileExists(filePath string) bool {
+    if _, err := os.Stat(filePath); err == nil {
+        return true
     } else if os.IsNotExist(err) {
-        log.Printf("File '%s' does not exist", filePath)
-		return false
+        return false
     } else {
         log.Printf("Error: %v\n", err)
-		panic(err)
+        panic(err)
     }
 }
 
+/* Delte file with given FilePath */
 func deleteFile(filePath string) {
 	if checkFileExists(filePath) {
         err := os.Remove(filePath)
@@ -59,14 +64,15 @@ func deleteFile(filePath string) {
         }
         log.Printf("Successfully Deleted file - '%s'\n", filePath)
 	} else {
-		log.Printf("No such file - '%s'", filePath)
+		log.Printf("No such file - '%s'\n", filePath)
 	}
 }
 
+/* Create File by given fileName at given filePath */
 func createFile(filePath string) {
 	// Check if the file exists
 	if checkFileExists(filePath) {
-        deleteOutputFile()
+        deleteFile(filePath)
 	}
 
     file, err := os.Create(filePath)
@@ -78,4 +84,35 @@ func createFile(filePath string) {
 	log.Printf("Created file - '%s'\n", filePath)
 }
 
-func createBloomFilter()
+/* Add False Positvie to "output.csv" */
+func addWordToCsv(keyword string, numDocs []string) {
+    if len(numDocs) == 0 {
+        log.Printf("No falsePositives for '%s'\n", keyword)
+        return
+    }
+
+    filePath := "output.csv"
+    if !checkFileExists(filePath) {
+		createFile(filePath)
+	}
+
+    file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Error opening file: %v\n", err)
+		panic(err)
+	}
+	defer file.Close()
+
+    var fields [2]string
+    fields[0] = keyword
+    fields[1] = strings.Join(numDocs, ";")
+
+    writer := csv.NewWriter(file)
+	defer writer.Flush()
+    rowSlice := fields[:]
+    
+	// Write the word to the file
+	if err := writer.Write(rowSlice); err != nil {
+        log.Fatalf("Error writing to CSV: %v", err)
+    }
+}

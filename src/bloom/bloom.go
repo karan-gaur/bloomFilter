@@ -1,8 +1,7 @@
-package bloomfilter
+package bloom
 
 import (
     "crypto/sha256"
-    "log"
 )
 
 type BloomFilter struct {
@@ -19,17 +18,17 @@ func NewBloomFilter(size, hashFunctions int) *BloomFilter {
     }
 }
 
-func (bf *BloomFilter) add(item string) {
+func (bf *BloomFilter) Add(item string) {
     for i := 0; i < bf.hashFunctions; i++ {
         index := int(bf.getHash(item, i)) % bf.size
         bf.bitArray[index] = true
     }
 }
 
-func (bf *BloomFilter) contains(item string) bool {
+func (bf *BloomFilter) Contains(item string) bool {
     for i := 0; i < bf.hashFunctions; i++ {
         index := int(bf.getHash(item, i)) % bf.size
-        if !bf.bitArray[index] {
+        if index >= bf.size || !bf.bitArray[index] {
             return false
         }
     }
