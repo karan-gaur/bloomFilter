@@ -1,8 +1,8 @@
-package BloomFilter
+package bloomfilter
 
 import (
     "crypto/sha256"
-    "fmt"
+    "log"
 )
 
 type BloomFilter struct {
