@@ -11,9 +11,9 @@ import (
 )
 
 /* Verify if the word found in a file by Dory indeed exists. */
-func verifyWordInFile(fileNum uint, keyword string) bool {
-    fileNumber := strconv.FormatUint(uint64(fileNum), 10)
-	file, err := os.Open(filepath.Join("sample_docs", fileNumber))
+func VerifyWordInFile(dataFile string, fileNum int, keyword string) bool {
+	filePath := filepath.Join(dataFile, strconv.Itoa(fileNum))
+	file, err := os.Open(filePath)
 	if err != nil {
         log.Fatal(err)
 		panic(err)
@@ -28,7 +28,7 @@ func verifyWordInFile(fileNum uint, keyword string) bool {
 		line := scanner.Text()
 		// Check if the word exists in the line
 		if strings.Contains(line, keyword) {
-            log.Printf("Found Word in File - %s\n", fileNumber)
+            log.Printf("Found Word in File - %s\n", filePath)
             return true
 		}
 	}
@@ -38,7 +38,7 @@ func verifyWordInFile(fileNum uint, keyword string) bool {
         log.Fatal(err)
     }
 	
-    log.Printf("False Positive Word - '%s' in File - %s\n", keyword, fileNumber)
+    log.Printf("False Positive Word - '%s' in File - %s\n", keyword, filePath)
     return false
 }
 
@@ -55,7 +55,7 @@ func checkFileExists(filePath string) bool {
 }
 
 /* Delte file with given FilePath */
-func deleteFile(filePath string) {
+func DeleteFile(filePath string) {
 	if checkFileExists(filePath) {
         err := os.Remove(filePath)
         if err != nil {
@@ -69,10 +69,10 @@ func deleteFile(filePath string) {
 }
 
 /* Create File by given fileName at given filePath */
-func createFile(filePath string) {
+func CreateFile(filePath string) {
 	// Check if the file exists
 	if checkFileExists(filePath) {
-        deleteFile(filePath)
+        DeleteFile(filePath)
 	}
 
     file, err := os.Create(filePath)
@@ -85,7 +85,7 @@ func createFile(filePath string) {
 }
 
 /* Add False Positvie to "output.csv" */
-func addWordToCsv(keyword string, numDocs []string) {
+func AddWordToCsv(keyword string, numDocs []string) {
     if len(numDocs) == 0 {
         log.Printf("No falsePositives for '%s'\n", keyword)
         return
@@ -93,7 +93,7 @@ func addWordToCsv(keyword string, numDocs []string) {
 
     filePath := "output.csv"
     if !checkFileExists(filePath) {
-		createFile(filePath)
+		CreateFile(filePath)
 	}
 
     file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0644)

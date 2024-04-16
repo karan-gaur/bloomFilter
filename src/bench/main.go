@@ -5,9 +5,11 @@ import (
 	"log"
 	"flag"
     "bufio"
+	"strconv"
     "io/ioutil"
 	"path/filepath"
 	"bloomf/src/bloom"
+	"bloomf/src/common"
 )
 
 func addKeywords(filePath string, bf *bloom.BloomFilter) {
@@ -67,21 +69,47 @@ func runInteractiveSearches(dataFile string, numDocs int, bfSize int, hashFuncti
 	}
 }
 
-func runFileSearch(dataFile string, keyword string, numDocs int, bfSize int, hashFunctions int) {
+func runFileSearch(dataFile string, keywords string, numDocs int, bfSize int, hashFunctions int) {
+	common.CreateFile("output.csv")
+	bloomFilters := createBloomFilter(dataFile, numDocs, bfSize, hashFunctions)
+
+	file, err := os.Open(keywords)
+    if err != nil {
+        log.Printf("Error reading file: %v", err)
+        return
+    }
+	defer file.Close()
+
+	// Create a scanner to read the file line by line
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		// Storing all False Positives indexex 
+		var falsePositives []string
+		for i, bf := range bloomFilters {
+			if bf.Contains(scanner.Text()) {
+				if !common.VerifyWordInFile(dataFile, i, scanner.Text()) {
+					// False Positive found for keyword
+                    falsePositives = append(falsePositives, strconv.Itoa(i))
+				}
+			}
+		}
+		// Adding words to output.csv
+		common.AddWordToCsv(scanner.Text(), falsePositives)
+	}
 
 }
 
 func main() {
 	dataFile := flag.String("data", "sample_docs", "Folder with data for Bloom Filter")
 	fileSearch := flag.Bool("file_search", false, "Interactive search with terminal or through file")
-	keyword := flag.String("keywords", "keywords.txt", "Keywords containts words to search in Bloom Filter")
+	keywords := flag.String("keywords", "keywords.txt", "Keywords containts words to search in Bloom Filter")
 	numDocs := flag.Int("num_docs", 128, "Max number of Docs to be considered for searching")
 	bfSize := flag.Int("bf_sz", 1024, "Size of Bloom Filter")
 	hashFunctions := flag.Int("hash_lvl", 5, "Max number of hash functions for Bloom Filter")
 	flag.Parse()
 
 	if *fileSearch {
-		runFileSearch(*dataFile, *keyword, *numDocs, *bfSize, *hashFunctions)
+		runFileSearch(*dataFile, *keywords, *numDocs, *bfSize, *hashFunctions)
 	} else {
 		runInteractiveSearches(*dataFile, *numDocs, *bfSize, *hashFunctions)
 	}
